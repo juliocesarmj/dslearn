@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
@@ -36,18 +37,21 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 	private JwtTokenStore tokenStore;
 	private AuthenticationManager authenticationManager;
 	private JwtTokenEnhancer tokenEnhancer;
+	private UserDetailsService userDetailsService;
 	
 	@Autowired
 	public AuthorizationServerConfig(BCryptPasswordEncoder passwordEncoder,
 			JwtAccessTokenConverter accessTokenConverter,
 			JwtTokenStore tokenStore,
 			AuthenticationManager authenticationManager,
-			JwtTokenEnhancer tokenEnhancer) {
+			JwtTokenEnhancer tokenEnhancer,
+			UserDetailsService userDetailsService) {
 		this.passwordEncoder = passwordEncoder;
 		this.accessTokenConverter = accessTokenConverter;
 		this.tokenStore = tokenStore;
 		this.authenticationManager = authenticationManager;
 		this.tokenEnhancer = tokenEnhancer;
+		this.userDetailsService = userDetailsService;
 	}
 	
 	@Override
@@ -61,8 +65,9 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 		.withClient(this.clientId)
 		.secret(this.passwordEncoder.encode(this.clientSecret))
 		.scopes("read", "write")
-		.authorizedGrantTypes("password")
-		.accessTokenValiditySeconds(this.jwtDuration);
+		.authorizedGrantTypes("password", "refresh_token")
+		.accessTokenValiditySeconds(this.jwtDuration)
+		.refreshTokenValiditySeconds(this.jwtDuration);
 	}
 
 	@Override
@@ -74,6 +79,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 		endpoints.authenticationManager(this.authenticationManager)
 		.tokenStore(this.tokenStore)
 		.accessTokenConverter(this.accessTokenConverter)
-		.tokenEnhancer(chain);
+		.tokenEnhancer(chain)
+		.userDetailsService(this.userDetailsService);
 	}
 }
