@@ -24,12 +24,16 @@ public class UserService implements UserDetailsService {
 	@Autowired
 	private UserRepository repository;
 	
+	@Autowired
+	private AuthService authService;
+	
 	@Transactional(readOnly = true)
 	public UserDTO findById(Long id) {
+		this.authService.validateSelfOrAdmin(id);
 		Optional<User> resultSet = this.repository.findById(id);
 		return new UserDTO(resultSet.orElseThrow(() -> new ResourceNotFoundException("Entity not found.")));
 	}
-
+	
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		User user = this.repository.findByEmail(username);
